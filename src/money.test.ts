@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { currencyDecimals, minorUnitsPerMajor, toMinorUnits, toMajorUnits } from './money';
+import { currencyDecimals, formatMoney, minorUnitsPerMajor, toMinorUnits, toMajorUnits } from './money';
 
 describe('currency scaling', () => {
   it('knows decimal places per currency (ISO 4217)', () => {
@@ -52,5 +52,14 @@ describe('currency scaling', () => {
 
   it('falls back to 2 decimals for an unknown currency code', () => {
     expect(currencyDecimals('zzz')).toBe(2);
+  });
+
+  it('shows rand as R, not the ISO code', () => {
+    expect(formatMoney(21500, 'zar')).toBe('R215.00');
+    expect(formatMoney(1234567, 'ZAR')).toBe('R12,345.67');
+  });
+
+  it('leaves other currencies on the standard format', () => {
+    expect(formatMoney(1999, 'usd')).toBe('$19.99');
   });
 });

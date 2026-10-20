@@ -56,5 +56,17 @@ export function formatMoney(cents: number, currency: string): string {
     formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: code });
     priceFormatters.set(code, formatter);
   }
-  return formatter.format(toMajorUnits(cents, currency));
+  const amount = toMajorUnits(cents, currency);
+  const local = LOCAL_SYMBOLS[code];
+  if (!local) return formatter.format(amount);
+  // en-US prints the ISO code ("ZAR 215.00") for currencies it has no short
+  // symbol for; shoppers there expect their own symbol ("R215.00").
+  return formatter
+    .formatToParts(amount)
+    .map((part) => (part.type === 'currency' ? local : part.value))
+    .join('')
+    .replace(/\u00a0/g, '');
 }
+
+/** Symbols local shoppers expect where en-US would show the bare ISO code. */
+const LOCAL_SYMBOLS: Record<string, string> = { ZAR: 'R' };

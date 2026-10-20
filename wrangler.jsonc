@@ -14,7 +14,7 @@
 	// Per-instance CLI deploys use scripts/provision-cf.sh, which renders an instance
 	// config from wrangler.template.jsonc (real ids) and restores this file after.
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "minshop",
+	"name": "mzansi-grooming-co",
 	"main": "./src/worker.ts",
 	"compatibility_date": "2026-07-20",
 	"compatibility_flags": [
@@ -73,18 +73,18 @@
 		{
 			"binding": "DB",
 			"database_name": "minshop-db",
-			"migrations_dir": "migrations"
+			"migrations_dir": "migrations","database_id": "0ab3d519-c6a9-459b-81d2-b7aae232ecc9"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "BUCKET",
-			"bucket_name": "minshop-images"
+			"bucket_name": "minshop-images","preview_bucket_name": "minshop-images"
 		},
 		{
 			"binding": "FILES",
 			// Private deliverables: never enable r2.dev or attach a custom domain.
-			"bucket_name": "minshop-files"
+			"bucket_name": "minshop-files","preview_bucket_name": "minshop-files"
 		}
 	],
 	// Optional integrations — uncomment + redeploy to enable (see README → Search,

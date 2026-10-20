@@ -1,0 +1,60 @@
+name: Deploy (test, build, publish, verify, roll back on failure)
+
+# Runs on every push to main: test, build, apply tracked D1 migrations, publish the Worker,
+# smoke-test the live store, and restore the previous version if the publish or smoke test fails.
+# Rollback restores code only; migrations are never undone, so keep them backwards compatible.
+# The live Worker is mzansi-grooming-co, so "name" in wrangler.jsonc must stay mzansi-grooming-co (a different name would
+# create a second Worker). Deployment goes through minshop's own script (`npm run deploy`: theme check, migrations,
+# wrangler deploy, cache purge when enabled); do not call wrangler deploy separately.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: 79c2a58ffa228b9ad12c0239beeacda2
+  WORKER_NAME: mzansi-grooming-co
+  SITE: https://mzansi-grooming-co.intheblacq.workers.dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+      - name: Install dependencies
+        run: npm ci
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Remember the live version (the rollback target)
+        id: prev
+        run: |
+          PREV=$(npx wrangler deployments list --name "$WORKER_NAME" | grep -oE '\([0-9]+%\) [0-9a-f-]{36}' | tail -1 | awk '{print $2}')
+          echo "Live version before this deploy: ${PREV:-none}"
+          echo "version=$PREV" >> "$GITHUB_OUTPUT"
+      - name: Deploy (migrations, publish)
+        id: deploy
+        run: npm run deploy -- --skip-build
+      - name: Smoke test the live store
+        id: smoke
+        run: |
+          sleep 8
+          for p in / /robots.txt /sitemap.xml; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 20 "$SITE$p")
+            echo "$SITE$p -> $code"
+            [ "$code" = 200 ] || exit 1
+          done
+      - name: Roll back to the previous version
+        if: always() && steps.prev.outputs.version != '' && (steps.deploy.outcome == 'failure' || steps.smoke.outcome == 'failure')
+        run: |
+          echo "Deploy or smoke test failed; restoring ${{ steps.prev.outputs.version }}"
+          npx wrangler rollback "${{ steps.prev.outputs.version }}" --name "$WORKER_NAME" -y -m "auto rollback: failed deploy or smoke test"

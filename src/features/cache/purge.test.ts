@@ -32,11 +32,25 @@ describe('Workers cache purge', () => {
     ]);
   });
 
-  it('throws when both purge attempts fail', async () => {
+  it('throws when both purge attempts fail and caching is active', async () => {
     const purge = vi.fn(async () => result(false));
-    await expect(purgeCacheTags(['catalog'], { purge })).rejects.toThrow(
+    await expect(purgeCacheTags(['catalog'], { purge }, true)).rejects.toThrow(
       'could not be invalidated',
     );
+    expect(purge).toHaveBeenCalledTimes(2);
+  });
+
+  it('still attempts both purges but does not throw when caching is off', async () => {
+    const purge = vi.fn(async () => result(false));
+    await expect(purgeCacheTags(['catalog'], { purge }, false)).resolves.toBeUndefined();
+    expect(purge).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not throw when the purge call itself rejects and caching is off', async () => {
+    const purge = vi.fn(async () => {
+      throw new Error('cache is not enabled for this Worker');
+    });
+    await expect(purgeCacheTags(['catalog'], { purge }, false)).resolves.toBeUndefined();
     expect(purge).toHaveBeenCalledTimes(2);
   });
 
