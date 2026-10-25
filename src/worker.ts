@@ -50,8 +50,20 @@ async function runScheduledSweeps(): Promise<void> {
   }
 }
 
+// Owner rule (2026-10-25): visitors from China, India, Pakistan and Russia are refused. This shop has only its workers.dev
+// address, which has no firewall rules, so the Worker checks the visitor's country itself.
+// To change it: Worker > Settings > Variables and Secrets > BLOCKED_COUNTRIES (comma separated codes, or "none").
+function blockedCountry(request: Request): boolean {
+  const list = String((env as unknown as { BLOCKED_COUNTRIES?: string }).BLOCKED_COUNTRIES ?? 'CN,IN,PK,RU').trim().toUpperCase();
+  const country = String((request as unknown as { cf?: { country?: string } }).cf?.country ?? '').toUpperCase();
+  return list !== 'NONE' && !!country && list.split(/[\s,]+/).includes(country);
+}
+
 export default {
-  fetch: handle,
+  fetch(request, workerEnv, ctx) {
+    if (blockedCountry(request)) return new Response('This service is not available in your country.', { status: 403 });
+    return handle(request, workerEnv, ctx);
+  },
 
   // Each sweep catches its own errors, so one failing job never strands the
   // others. waitUntil keeps the invocation alive for the whole pass.
