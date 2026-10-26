@@ -71,6 +71,12 @@
 			}
 		}
 	],
+	// Stripe, shared by every In The Blacq Worker from the account's Secrets Store: the "InTheBlacq Xero Sandbox" keys. Live keys
+	// (STRIPE_LIVE_SECRET_KEY, STRIPE_LIVE_PUBLISHABLE_KEY) are added when the project goes live; STRIPE_MODE in the dashboard picks.
+	"secrets_store_secrets": [
+		{ "binding": "STRIPE_SANDBOX_SECRET_KEY", "store_id": "81a3ad158ade4e94aa3375b6396f587f", "secret_name": "STRIPE_SECRET_KEY" },
+		{ "binding": "STRIPE_SANDBOX_PUBLISHABLE_KEY", "store_id": "81a3ad158ade4e94aa3375b6396f587f", "secret_name": "STRIPE_PUBLISHABLE_KEY" }
+	],
 	"d1_databases": [
 		{
 			"binding": "DB",
