@@ -129,6 +129,8 @@ const shell = buildShellModel({
       document.addEventListener('load', finishImageFade, true);
       document.addEventListener('error', finishImageFade, true);
     </script>
+    <!-- Free Cloudflare Web Analytics: the shop has only its workers.dev address, so it needs the beacon. -->
+    <script is:inline defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "2ba07a2839524583a89a56e3a6f0a216"}'></script>
   </head>
   <body class="flex min-h-screen flex-col bg-paper text-ink antialiased">
     <StoreHeader model={shell} />
